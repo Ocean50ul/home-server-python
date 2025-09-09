@@ -1,0 +1,29 @@
+services:
+    app:
+        build:
+            context: .
+            target: runtime
+        ports:
+            - "8000:8000"  # Map host 8000 to containers 8000
+        depends_on:
+            - db
+        env_file: .env
+        environment:
+            - DATABASE_URL=postgresql://app_user:${APP_USER_PASS}@db:5432/${DB_NAME}
+
+    tests:
+        build:
+            context: .
+            target: test
+    
+    db:
+        image: postgres:17-alpine
+        restart: always
+        env_file: .env
+        ports:
+            - '5432:5432'  # Map host 5432 to containers 5432
+        volumes:
+            - postgres_data:/var/lib/postgresql/data/
+            - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+volumes:
+  postgres_data: {}
