@@ -4,3 +4,9 @@
 **/__pycache__
 *.pyc
 *.db
+
+media_server/src/*.egg-info/
+.vscode
+
+audio_streamer/target
+audio_streamer/debug

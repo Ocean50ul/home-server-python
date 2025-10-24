@@ -1,0 +1,32 @@
+[project]
+name = "home_server"
+version = "0.1.0"
+description = "Home server. Some bits a powered by Rust."
+requires-python = "~=3.13.0"
+
+dependencies = [
+    "SQLAlchemy",
+    "fastapi[standard]",
+    "pydantic",
+    "alembic",
+    "psycopg2-binary",
+    "returns",
+    "numpy",
+    "av"
+]
+
+[project.optional-dependencies]
+
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "black",
+    "ruff",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pyright]
+reportMissingTypeStubs = "warning"

@@ -1,5 +1,0 @@
-SQLAlchemy
-fastapi[standard]
-pydantic
-alembic
-psycopg2-binary

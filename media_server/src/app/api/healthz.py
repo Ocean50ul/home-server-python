@@ -11,7 +11,7 @@ class HealthyResponse(BaseModel):
 
 
 @router.get("/healthz", response_model=HealthyResponse)
-def read_healthz():
+async def read_healthz():
     """
     Still sane, Exile?
     """
