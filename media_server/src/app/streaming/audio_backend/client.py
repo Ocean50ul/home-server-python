@@ -46,7 +46,7 @@ class BackendInvalidResponse(AudioBackendError):
     pass
 
 
-class BackendIssueWorkerError(AudioBackendError):
+class InternalBackendError(AudioBackendError):
     """Backend returned with an error on issue cmd"""
 
     pass
@@ -109,6 +109,10 @@ class AudioBackendClient:
             ) from e
 
     async def close(self):
+        """
+        Raise:
+            BackendDisconnectedError on failed socket read or write
+        """
         if not self._rust_socket_writer.is_closing():
             self._rust_socket_writer.close()
             await self._rust_socket_writer.wait_closed()
@@ -125,7 +129,7 @@ class AudioBackendClient:
         """
         Raise:
             BackendDisconnectedError on failed socket read or write,
-            BackendIssueWorkerError on iternal rust backend error
+            IternalBackendError on iternal rust backend error
         """
         try:
             await self._send_command(IssueCommand(cmd="issue"))
@@ -136,7 +140,7 @@ class AudioBackendClient:
             if isinstance(response, SuccessResponse):
                 return response.port
             else:
-                raise BackendIssueWorkerError(
+                raise InternalBackendError(
                     f"Rust backend has returned with an error: {response.message}"
                 )
         except ValidationError as e:
@@ -148,7 +152,7 @@ class AudioBackendClient:
         """
         Raise:
             BackendDisconnectedError on failed socket read or write,
-            BackendIssueWorkerError on iternal rust backend error
+            IternalBackendError on iternal rust backend error
         """
         try:
             await self._send_command(CloseCommand(cmd="close", port=port))
@@ -159,7 +163,7 @@ class AudioBackendClient:
             if isinstance(response, SuccessResponse):
                 return response.port
             else:
-                raise BackendIssueWorkerError(
+                raise InternalBackendError(
                     f"Rust backend has returned with an error: {response.message}"
                 )
         except OSError as e:

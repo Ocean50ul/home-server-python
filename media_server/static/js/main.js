@@ -87,7 +87,21 @@ stopButton.addEventListener("click", () => {
   stopButton.disabled = true;
 });
 
+// Performance
+let expectedNextLoopTime = 0;
+
 async function playbackLoop() {
+  // performance logging
+  const now = performance.now();
+  if (expectedNextLoopTime > 0) {
+    const delay = now - expectedNextLoopTime;
+    if (delay > 30) {
+      console.log(
+        `[HICCUP] Client-side lag! Loop was delayed by an extra ${(actualDelay - 10).toFixed(2)} ms`,
+      );
+    }
+  }
+
   // we have some work
   if (audioQueue.length > 0) {
     const frameToPlay = audioQueue.shift(); // first out, popping the first element
@@ -123,12 +137,16 @@ async function playbackLoop() {
       nextPlayTime += audioBuffer.duration;
     }
 
+    // performance measurement
+    expectedNextLoopTime = performance.now() + 10;
+
     // timeout to avoid busy-wait loop
     // basically this thing is scheduling the function to be evoked again every 10ms
     setTimeout(playbackLoop, 10);
   } else {
     // we have no work, the buffer is empty
     isLoopActive = false;
+    expectedNextLoopTime = 0;
     return;
   }
 }

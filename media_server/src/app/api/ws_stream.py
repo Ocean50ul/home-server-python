@@ -15,42 +15,63 @@ async def websocket_endpoint(
 ):
     await websocket.accept()
 
-    worker_port = None
-    writer = None
-    session_task = None
+    session: Session | None = None
+    writer: asyncio.StreamWriter | None = None
+    worker_port: int | None = None
 
     try:
-        message = await websocket.receive_json()
+        while True:
+            message = await websocket.receive_json()
 
-        if message.get("command") == "start":
-            worker_port = await backend_client.issue_new_worker()
-            print(f"Issued new worker on port {worker_port}")
+            if message.get("command") == "start":
+                if session:
+                    continue
 
-            (reader, writer) = await asyncio.open_connection("127.0.0.1", worker_port)
-            session = Session(reader, websocket)
+                worker_port = await backend_client.issue_new_worker()
+                print(
+                    f"Received start command from the client. Issued new worker on port {worker_port}"
+                )
 
-            session_task = asyncio.create_task(session.start())
+                (reader, writer) = await asyncio.open_connection(
+                    "127.0.0.1", worker_port
+                )
+                session = Session(reader, websocket)
 
-            print("Session started. Streaming audio...")
+                await session.start()
 
-            while True:
-                await websocket.receive_json()
+                print("Session started. Streaming audio...")
+
+            if message.get("command") == "stop":
+                if not session:
+                    continue
+
+                print(
+                    f"Received stop command from the client. Closing the worker on port {worker_port} and cleaning up the session."
+                )
+                await session.close()
+
+                if writer and not writer.is_closing():
+                    writer.close()
+
+                if worker_port:
+                    dropped_port = await backend_client.drop_worker(worker_port)
+                    print(f"Dropped worker on port {dropped_port}.")
+
+                print("Session closed.")
 
     except WebSocketDisconnect:
         print("Client has disconnected.")
     except Exception as e:
         print(f"Some kind of a exception occured: {e}. Stupid fucking mistakes.")
     finally:
-        print("Cleaning up session...")
-
-        if session_task and not session_task.done():
-            session_task.cancel()
+        print("Cleaning up the session on finally...")
+        await session.close()
 
         if writer and not writer.is_closing():
             writer.close()
 
         if worker_port:
-            await backend_client.drop_worker(worker_port)
-            print(f"Dropped worker on port {worker_port}")
+            dropped_port = await backend_client.drop_worker(worker_port)
+            print(f"Dropped worker on port {dropped_port}")
 
         print("Cleanup complete.")

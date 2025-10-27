@@ -1,6 +1,6 @@
 from fastapi import Request, WebSocket
-from app.streaming.audio_backend import AudioBackendClient
+from app.streaming.sessions_manager.sessions_manager import SessionsManager
 
 
-async def get_backend_client(websocket: WebSocket) -> AudioBackendClient:
+async def get_sessions_manager(websocket: WebSocket) -> SessionsManager:
     return websocket.app.state.backend_client
